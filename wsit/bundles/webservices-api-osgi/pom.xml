@@ -40,7 +40,7 @@
                         <configuration>
                             <excludeTransitive>true</excludeTransitive>
                             <outputDirectory>${project.build.directory}/classes</outputDirectory>
-                            <includes>jakarta\/jws\/**,jakarta\/xml\/ws\/**,jakarta\/xml\/soap\/**</includes>
+                            <includes>javax\/jws\/**,javax\/xml\/ws\/**,javax\/xml\/soap\/**</includes>
                         </configuration>
                     </execution>
                     <execution>
@@ -57,8 +57,8 @@
                                     <version>${project.version}</version>
                                     <classifier>sources</classifier>
                                     <overWrite>false</overWrite>
-                                    <outputDirectory>${dep.sources}</outputDirectory>
-                                    <includes>jakarta\/jws\/**,jakarta\/xml\/ws\/**,jakarta\/xml\/soap\/**</includes>
+                                    <outputDirectory>${generated.sources.dir}</outputDirectory>
+                                    <includes>javax\/jws\/**,javax\/xml\/ws\/**,javax\/xml\/soap\/**</includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -76,7 +76,7 @@
                         </goals>
                         <configuration>
                             <sources>
-                                <source>${dep.sources}</source>
+                                <source>${generated.sources.dir}</source>
                             </sources>
                         </configuration>
                     </execution>
@@ -123,15 +123,17 @@
                             <goal>manifest</goal>
                         </goals>
                         <configuration>
+                            <manifestLocation>${manifest.folder}/META-INF</manifestLocation>
                             <instructions>
                                 <Export-Package>
-                                    jakarta.jws.*;version=${jaxws-api.osgiVersion},
+                                    jakarta.jws.*;version=3.0,
                                     jakarta.xml.ws.*;version=${jaxws-api.osgiVersion},
                                     jakarta.xml.soap.*;version=${saaj-api.osgiVersion}
                                 </Export-Package>
                                 <Import-Package>
-                                    !org.glassfish.hk2.osgiresourcelocator,
-                                    jakarta.activation;resolution:=optional,
+                                    jakarta.activation;version=!;resolution:=optional,
+                                    jakarta.xml.bind;version=${jaxb-api.osgiVersion},
+                                    jakarta.xml.bind.*;version=${jaxb-api.osgiVersion},
                                     *
                                 </Import-Package>
                                 <DynamicImport-Package>org.glassfish.hk2.osgiresourcelocator</DynamicImport-Package>
@@ -142,10 +144,32 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-manifest</id>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <phase>prepare-package</phase>
+                        <configuration>
+                            <resources>
+                                <resource>
+                                    <directory>${manifest.folder}</directory>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                            <outputDirectory>${mf.dir}</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
                     <archive>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                        <manifestFile>${mf.dir}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
             </plugin>
@@ -153,10 +177,6 @@
     </build>
 
     <dependencies>
-        <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
-        </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>webservices-api</artifactId>
@@ -166,6 +186,7 @@
     </dependencies>
 
     <properties>
-        <dep.sources>${project.build.directory}/generated-sources/dependencies</dep.sources>
+        <generated.sources.dir>${project.build.directory}/generated-sources</generated.sources.dir>
+        <manifest.folder>${project.build.directory}/generated-manifest</manifest.folder>
     </properties>
 </project>
